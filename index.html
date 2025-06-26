@@ -1,288 +1,114 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
-  <meta name="facebook-domain-verification" content="h6rnb1zmc07j69xmwxhshlcxtyp2kl" />
+  <meta name="facebook-domain-verification" content="14kghxgf2a8ulptip4bpx5dvsvpewm" />
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>UrbanStyle Boutique S.R.L.</title>
-  <style>
-    body {
-      font-family: 'Arial', sans-serif;
-      margin: 0;
-      padding: 0;
-      color: #333;
+  <title>Oferta Exclusiva</title>
+  <link rel="stylesheet" href="style.css">
+  <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@700;900&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+
+  <!-- Firebase -->
+  <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore-compat.js"></script>
+  <script>
+    // CONFIGURACIÓN FIREBASE - Reemplazá con tus datos
+    const firebaseConfig = {
+      apiKey: "AIzaSyDsCYwaKb-TdtYOytNV98A7ZLtlPCkYxRM",
+      authDomain: "prueba-3efec.firebaseapp.com",
+      projectId: "prueba-3efec",
+      storageBucket: "prueba-3efec.firebasestorage.app",
+      messagingSenderId: "599043731526",
+      appId: "1:599043731526:web:b90607a87c5021fa555a47"
+    };
+
+    firebase.initializeApp(firebaseConfig);
+    const db = firebase.firestore();
+
+    const landingId = 'landingBonos'; // ID del documento en Firestore
+    const fechaHoy = new Date().toISOString().split('T')[0];
+
+    async function inicializarLanding() {
+      try {
+        const doc = await db.collection('landings').doc(landingId).get();
+        if (!doc.exists) return;
+        const data = doc.data();
+
+        // Colocar número de WhatsApp
+        const waBtn = document.querySelector(".whatsapp-button");
+        waBtn.href = `https://wa.me/${data.numeroWhatsapp}?text=Quiero%20obtener%20mi%20bono%20del%20100%25`;
+
+        // Insertar pixel Meta
+        if (data.pixelMetaId) {
+          const script = document.createElement("script");
+          script.innerHTML = `
+            !function(f,b,e,v,n,t,s)
+            {if(f.fbq)return;n=f.fbq=function(){n.callMethod?
+            n.callMethod.apply(n,arguments):n.queue.push(arguments)};
+            if(!f._fbq)f._fbq=n;n.push=n;n.loaded=!0;n.version='2.0';
+            n.queue=[];t=b.createElement(e);t.async=!0;
+            t.src=v;s=b.getElementsByTagName(e)[0];
+            s.parentNode.insertBefore(t,s)}(window, document,'script',
+            'https://connect.facebook.net/en_US/fbevents.js');
+            fbq('init', '${data.pixelMetaId}');
+            fbq('track', 'PageView');
+          `;
+          document.head.appendChild(script);
+        }
+
+        // Contador de pageview
+        await db.collection('stats')
+          .doc('pageviews')
+          .collection(fechaHoy)
+          .doc(landingId)
+          .set({ count: firebase.firestore.FieldValue.increment(1) }, { merge: true });
+
+      } catch (e) {
+        console.error("Error al inicializar landing:", e);
+      }
     }
 
-    .container {
-      width: 90%;
-      margin: auto;
-      overflow: hidden;
+    async function registrarClick() {
+      try {
+        await db.collection('stats')
+          .doc('clicks')
+          .collection(fechaHoy)
+          .doc(landingId)
+          .set({ count: firebase.firestore.FieldValue.increment(1) }, { merge: true });
+      } catch (e) {
+        console.error("Error al registrar click:", e);
+      }
     }
 
-    /* Header */
-    .header {
-      background: #222;
-      color: #fff;
-      padding: 1rem 0;
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-    }
-    .header .logo h1 {
-      margin: 0;
-      font-size: 1.8rem;
-    }
-    .nav ul {
-      list-style: none;
-      padding: 0;
-      margin: 0;
-      display: flex;
-    }
-    .nav ul li {
-      margin: 0 15px;
-    }
-    .nav ul li a {
-      color: #fff;
-      text-decoration: none;
-      font-weight: bold;
-    }
-
-    /* Hero Section */
-    .hero {
-      background: #333;
-      color: #fff;
-      text-align: center;
-      padding: 4rem 0;
-      background: url('https://via.placeholder.com/1600x600?text=UrbanStyle+Boutique') no-repeat center center/cover;
-    }
-    .hero h2 {
-      font-size: 2.5rem;
-      margin-bottom: 0.5rem;
-    }
-    .hero p {
-      font-size: 1.2rem;
-      margin-bottom: 1rem;
-    }
-    .hero .btn {
-      background: #E91E63;
-      color: #fff;
-      padding: 1rem 2rem;
-      text-decoration: none;
-      border-radius: 5px;
-      font-weight: bold;
-      transition: background 0.3s;
-    }
-    .hero .btn:hover {
-      background: #C2185B;
-    }
-
-    /* Productos y Servicios */
-    .productos {
-      background: #f4f4f4;
-      padding: 3rem 0;
-      text-align: center;
-    }
-    .productos h2 {
-      margin-bottom: 1rem;
-      color: #222;
-    }
-    .productos-grid {
-      display: flex;
-      flex-wrap: wrap;
-      justify-content: center;
-      gap: 20px;
-      margin-top: 2rem;
-    }
-    .producto-item {
-      background: #fff;
-      padding: 1.5rem;
-      border-radius: 5px;
-      box-shadow: 0 4px 6px rgba(0,0,0,0.1);
-      width: 250px;
-    }
-    .producto-item h3 {
-      margin-top: 0;
-      color: #E91E63;
-    }
-    .producto-item p {
-      font-size: 0.95rem;
-    }
-
-    /* Nosotros */
-    .nosotros {
-      background: #fff;
-      padding: 3rem 0;
-      text-align: center;
-    }
-    .nosotros h2 {
-      margin-bottom: 1rem;
-      color: #222;
-    }
-    .nosotros p {
-      width: 80%;
-      margin: auto;
-      font-size: 1rem;
-      text-align: justify;
-    }
-
-    /* Contacto */
-    .contacto {
-      background: #f4f4f4;
-      padding: 3rem 0;
-      text-align: center;
-    }
-    .contacto h2 {
-      margin-bottom: 1rem;
-      color: #222;
-    }
-    .contacto form input,
-    .contacto form textarea {
-      width: 90%;
-      margin: 10px 0;
-      padding: 1rem;
-      border: 1px solid #ccc;
-      border-radius: 5px;
-    }
-    .contacto form button {
-      background: #E91E63;
-      color: #fff;
-      padding: 1rem 2rem;
-      border: none;
-      border-radius: 5px;
-      cursor: pointer;
-      transition: background 0.3s;
-    }
-    .contacto form button:hover {
-      background: #C2185B;
-    }
-
-    /* Términos y Condiciones / Política de Privacidad */
-    .terms {
-      background: #f8f8f8;
-      padding: 3rem 0;
-      text-align: center;
-    }
-    .terms h2 {
-      color: #222;
-      margin-bottom: 1rem;
-    }
-    .terms p {
-      width: 80%;
-      margin: auto;
-      text-align: justify;
-      margin-bottom: 1rem;
-      font-size: 0.95rem;
-    }
-
-    /* Footer */
-    footer {
-      background: #222;
-      color: #fff;
-      text-align: center;
-      padding: 1rem 0;
-    }
-  </style>
+    window.addEventListener('DOMContentLoaded', inicializarLanding);
+  </script>
 </head>
 <body>
-  <!-- Header -->
-  <header class="header">
-    <div class="container">
-      <div class="logo">
-        <h1>UrbanStyle Boutique</h1>
-      </div>
-      <nav class="nav">
-        <ul>
-          <li><a href="#inicio">Inicio</a></li>
-          <li><a href="#productos">Productos</a></li>
-          <li><a href="#nosotros">Nosotros</a></li>
-          <li><a href="#contacto">Contacto</a></li>
-        </ul>
-      </nav>
+  <div class="container">
+    <div class="header-offer">
+      <p>¡OFERTA POR TIEMPO LIMITADO!</p>
     </div>
-  </header>
-
-  <!-- Hero Section -->
-  <section id="inicio" class="hero">
-    <div class="container">
-      <h2>Moda Urbana con Estilo</h2>
-      <p>Descubre la colección exclusiva para el público joven y urbano.</p>
-      <a href="#contacto" class="btn">Explora nuestra colección</a>
-    </div>
-  </section>
-
-  <!-- Productos y Servicios -->
-  <section id="productos" class="productos">
-    <div class="container">
-      <h2>Nuestros Productos y Servicios</h2>
-      <div class="productos-grid">
-        <div class="producto-item">
-          <h3>Ropa Urbana</h3>
-          <p>Camisetas, jeans, chaquetas y sudaderas que marcan tendencia.</p>
-        </div>
-        <div class="producto-item">
-          <h3>Accesorios</h3>
-          <p>Bolsos, gorras, cinturones y joyería de autor para completar tu look.</p>
-        </div>
-        <div class="producto-item">
-          <h3>Calzado</h3>
-          <p>Zapatillas y botas de diseño exclusivo para un estilo único.</p>
-        </div>
-        <div class="producto-item">
-          <h3>Servicios Personalizados</h3>
-          <p>Asesoría de imagen y pedidos a medida para eventos o colecciones cápsula.</p>
-        </div>
+    <div class="logo-section">
+      <div class="logo-circle">
+        <img src="logo-image.png" alt="Logo" class="logo-image">
       </div>
     </div>
-  </section>
-
-  <!-- Nosotros -->
-  <section id="nosotros" class="nosotros">
-    <div class="container">
-      <h2>Sobre Nosotros</h2>
-      <p>
-        UrbanStyle Boutique S.R.L. es una boutique de moda enfocada en el público joven y urbano. Fundada el 1 de marzo de 2018, ofrecemos una selección exclusiva de ropa, calzados y accesorios de marcas emergentes y diseñadores independientes. Combinamos tendencias internacionales con un toque local para brindar productos de calidad que reflejen autenticidad y estilo.
-      </p>
+    <div class="content">
+      <h1 class="title">ACCESO EXCLUSIVO</h1>
+      <p class="subtitle">¡SÚPER BONO EN TU PRIMER DEPÓSITO!</p>
+      <p class="cta-text">ESCRÍBENOS APRETANDO EL BOTÓN DE ABAJO</p>
     </div>
-  </section>
-
-  <!-- Contacto -->
-  <section id="contacto" class="contacto">
-    <div class="container">
-      <h2>Contáctanos</h2>
-      <form>
-        <input type="text" placeholder="Nombre" required>
-        <input type="email" placeholder="Correo Electrónico" required>
-        <input type="text" placeholder="Teléfono" required>
-        <textarea placeholder="Mensaje" required></textarea>
-        <button type="submit">Enviar</button>
-      </form>
+    <div class="button-section">
+      <a onclick="registrarClick()" class="whatsapp-button" target="_blank">
+        <i class="fab fa-whatsapp"></i> OBTENER MI BONO AHORA
+      </a>
     </div>
-  </section>
+  </div>
+  <script src="script.js"></script>
+</body>
+</html>
 
-  <!-- Términos y Condiciones / Política de Privacidad -->
-  <section class="terms">
-    <div class="container">
-      <h2>Términos y Condiciones</h2>
-      <p>UrbanStyle Boutique S.R.L. proporciona este sitio web con fines informativos sobre nuestros productos y servicios.</p>
-      <p>1. Uso del Sitio Web: El uso de este sitio web implica la aceptación de los términos aquí descritos. La información disponible en este sitio puede ser modificada sin previo aviso.</p>
-      <p>2. Propiedad Intelectual: Todo el contenido, incluyendo textos, imágenes, logotipos y diseño, es propiedad de UrbanStyle Boutique S.R.L. y está protegido por leyes de derechos de autor.</p>
-      <p>3. Responsabilidad del Usuario: El usuario se compromete a utilizar el sitio de manera responsable y conforme a la ley. No está permitido el uso indebido de la información, incluyendo su reproducción sin autorización.</p>
-      <p>4. Responsabilidad de UrbanStyle Boutique: No nos hacemos responsables por errores en la información proporcionada, interrupciones del servicio o daños derivados del uso del sitio web.</p>
-      <p>5. Enlaces Externos: Nuestro sitio puede contener enlaces a terceros (Facebook, WhatsApp u otros). No nos responsabilizamos por el contenido o políticas de estos sitios externos.</p>
-
-      <h2>Política de Privacidad</h2>
-      <p>En UrbanStyle Boutique S.R.L., la privacidad de nuestros clientes es una prioridad.</p>
-      <p>1. Recopilación de Datos: Podemos recopilar datos personales como nombre, correo electrónico y número de teléfono cuando un usuario nos contacta a través del sitio web, Facebook o WhatsApp.</p>
-      <p>2. Uso de la Información: La información recopilada se usa exclusivamente para responder consultas, mejorar nuestros servicios y enviar comunicaciones relevantes.</p>
-      <p>3. Protección de Datos: Implementamos medidas de seguridad para proteger la información personal.</p>
-    </div>
-  </section>
-
-  <!-- Footer -->
-  <footer>
-    <div class="container">
-      <p>&copy; 2025 UrbanStyle Boutique S.R.L. - Todos los derechos reservados.</p>
-    </div>
   </footer>
 </body>
 </html>
