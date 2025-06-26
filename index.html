@@ -13,12 +13,11 @@
   <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore-compat.js"></script>
   <script>
-    // CONFIGURACIÓN FIREBASE - Reemplazá con tus datos
     const firebaseConfig = {
       apiKey: "AIzaSyDsCYwaKb-TdtYOytNV98A7ZLtlPCkYxRM",
       authDomain: "prueba-3efec.firebaseapp.com",
       projectId: "prueba-3efec",
-      storageBucket: "prueba-3efec.firebasestorage.app",
+      storageBucket: "prueba-3efec.appspot.com",
       messagingSenderId: "599043731526",
       appId: "1:599043731526:web:b90607a87c5021fa555a47"
     };
@@ -26,20 +25,38 @@
     firebase.initializeApp(firebaseConfig);
     const db = firebase.firestore();
 
-    const landingId = 'landingurban'; // ID del documento en Firestore
+    const landingId = 'landingurban'; // Usá un ID único para cada landing
     const fechaHoy = new Date().toISOString().split('T')[0];
 
     async function inicializarLanding() {
       try {
-        const doc = await db.collection('landings').doc(landingId).get();
-        if (!doc.exists) return;
-        const data = doc.data();
+        const docRef = db.collection('landings').doc(landingId);
+        const docSnap = await docRef.get();
 
-        // Colocar número de WhatsApp
+        if (!docSnap.exists) {
+          document.body.innerHTML = "<p style='padding:2rem;text-align:center;'>Landing no encontrada</p>";
+          return;
+        }
+
+        const data = docSnap.data();
+
+        // Ocultar si landing está desactivada
+        if (data.activo === false) {
+          document.body.innerHTML = "<p style='padding:2rem;text-align:center;'>Esta oferta ya no está disponible.</p>";
+          return;
+        }
+
+        // WhatsApp
         const waBtn = document.querySelector(".whatsapp-button");
-        waBtn.href = `https://wa.me/${data.numeroWhatsapp}?text=Quiero%20obtener%20mi%20bono%20del%20100%25`;
+        if (data.numeroWhatsapp) {
+          const mensaje = encodeURIComponent("Hola! Quiero obtener mi bono del 100%");
+          waBtn.href = `https://wa.me/${data.numeroWhatsapp}?text=${mensaje}`;
+          waBtn.style.display = "inline-block";
+        } else {
+          waBtn.style.display = "none";
+        }
 
-        // Insertar pixel Meta
+        // Pixel Meta
         if (data.pixelMetaId) {
           const script = document.createElement("script");
           script.innerHTML = `
@@ -57,25 +74,30 @@
           document.head.appendChild(script);
         }
 
-        // Contador de pageview
-        await db.collection('stats')
-          .doc('pageviews')
+        // Contador de visitas
+        await db.collection("stats")
+          .doc("pageviews")
           .collection(fechaHoy)
           .doc(landingId)
           .set({ count: firebase.firestore.FieldValue.increment(1) }, { merge: true });
 
       } catch (e) {
         console.error("Error al inicializar landing:", e);
+        document.body.innerHTML = "<p style='padding:2rem;text-align:center;'>Error al cargar la oferta.</p>";
       }
     }
 
     async function registrarClick() {
       try {
-        await db.collection('stats')
-          .doc('clicks')
+        await db.collection("stats")
+          .doc("clicks")
           .collection(fechaHoy)
           .doc(landingId)
           .set({ count: firebase.firestore.FieldValue.increment(1) }, { merge: true });
+
+        if (typeof fbq === 'function') {
+          fbq('track', 'Contact');
+        }
       } catch (e) {
         console.error("Error al registrar click:", e);
       }
@@ -100,15 +122,21 @@
       <p class="cta-text">ESCRÍBENOS APRETANDO EL BOTÓN DE ABAJO</p>
     </div>
     <div class="button-section">
-      <a onclick="registrarClick()" class="whatsapp-button" target="_blank">
+      <a onclick="registrarClick()" class="whatsapp-button" target="_blank" style="opacity: 0; transform: scale(0); transition: all 0.5s ease;">
         <i class="fab fa-whatsapp"></i> OBTENER MI BONO AHORA
       </a>
     </div>
   </div>
-  <script src="script.js"></script>
+  <script>
+    // Animación simple para mostrar el botón después de cargar
+    window.addEventListener('DOMContentLoaded', () => {
+      setTimeout(() => {
+        const btn = document.querySelector('.whatsapp-button');
+        btn.style.transform = 'scale(1)';
+        btn.style.opacity = '1';
+      }, 500);
+    });
+  </script>
 </body>
 </html>
 
-  </footer>
-</body>
-</html>
